@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+env/
+.venv/
+
+# Models (large files — regenerate with train_models.py)
+Backend/models/*.pkl
+
+# Keep dataset_stats.json so frontend can show metrics without training
+# Backend/models/dataset_stats.json  ← intentionally NOT ignored
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp

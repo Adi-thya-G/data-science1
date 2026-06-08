@@ -1,0 +1,51 @@
+{
+  "national_avg_litres": 135930,
+  "target_min": 33104,
+  "target_max": 309868,
+  "county_mapping": {
+    "Cheshire": 0,
+    "Cornwall": 1,
+    "Derbyshire": 2,
+    "Devon": 3,
+    "Essex": 4,
+    "Kent": 5,
+    "Lancashire": 6,
+    "Leicestershire": 7,
+    "Norfolk": 8,
+    "Suffolk": 9,
+    "Surrey": 10,
+    "Yorkshire": 11
+  },
+  "feature_means": {
+    "Number-Of-People": 2.87,
+    "Number-Of-Showers": 2.32,
+    "Number-Of-Toilets": 1.89,
+    "Showers-Per-Week": 11.38,
+    "Shower-Duration-Minutes": 11.41,
+    "Washing-Machine-Per-Week": 4.0,
+    "Dishwasher-Per-Week": 4.53,
+    "Boil-Water-Per-Week": 17.03,
+    "Bath-Frequency-Per-Week": 2.01,
+    "Has-Garden": 0.59,
+    "Garden-Watering-Per-Week": 2.02,
+    "Has-Swimming-Pool": 0.05,
+    "Car-Wash-Per-Month": 1.51,
+    "County_encoded": 5.48
+  },
+  "model_metrics": {
+    "random_forest": {
+      "mae": 5776.0,
+      "rmse": 7692.0,
+      "r2": 0.9717,
+      "cv_r2": 0.9669,
+      "cv_std": 0.0028
+    },
+    "gradient_boosting": {
+      "mae": 4983.0,
+      "rmse": 6748.0,
+      "r2": 0.9782,
+      "cv_r2": 0.9726,
+      "cv_std": 0.0026
+    }
+  }
+}

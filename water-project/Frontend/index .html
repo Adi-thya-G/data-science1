@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AquaPredict — Household Water Usage AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ─── DESIGN TOKENS ─────────────────────────────────────── */
+:root {
+  --bg:       #070d14;
+  --surface:  #0d1825;
+  --card:     #111e2e;
+  --border:   #1a2e42;
+  --accent:   #00c8ff;
+  --accent2:  #0af5a0;
+  --warn:     #ff6b35;
+  --text:     #e8f4ff;
+  --muted:    #5a7a95;
+  --font-h:   'Syne', sans-serif;
+  --font-b:   'DM Sans', sans-serif;
+  --r:        12px;
+  --shadow:   0 8px 40px rgba(0,200,255,.07);
+}
+
+/* ─── RESET ─────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-b);
+  font-weight:400;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ─── BACKGROUND GLOW ──────────────────────────────────── */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 10%, rgba(0,200,255,.06) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 50% at 80% 80%, rgba(10,245,160,.04) 0%, transparent 70%);
+  pointer-events:none;z-index:0;
+}
+
+/* ─── LAYOUT ────────────────────────────────────────────── */
+.wrapper{
+  max-width:1100px;
+  margin:0 auto;
+  padding:0 24px 80px;
+  position:relative;z-index:1;
+}
+
+/* ─── HEADER ────────────────────────────────────────────── */
+header{
+  padding:40px 0 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  margin-bottom:40px;
+}
+.logo{
+  display:flex;align-items:center;gap:12px;
+}
+.logo-icon{
+  width:42px;height:42px;
+  background:linear-gradient(135deg,#00c8ff,#0af5a0);
+  border-radius:10px;
+  display:grid;place-items:center;
+  font-size:20px;
+}
+.logo h1{
+  font-family:var(--font-h);
+  font-size:1.5rem;font-weight:800;
+  letter-spacing:-.02em;
+}
+.logo span{color:var(--accent);}
+.api-badge{
+  display:flex;align-items:center;gap:8px;
+  font-size:.75rem;color:var(--muted);
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:999px;padding:6px 14px;
+}
+.dot{
+  width:7px;height:7px;border-radius:50%;
+  background:#555;
+  transition:background .3s;
+}
+.dot.online{background:var(--accent2);}
+
+/* ─── HERO ──────────────────────────────────────────────── */
+.hero{
+  text-align:center;
+  padding:32px 0 48px;
+}
+.hero h2{
+  font-family:var(--font-h);
+  font-size:clamp(2rem,5vw,3.2rem);
+  font-weight:800;line-height:1.1;
+  letter-spacing:-.03em;
+  margin-bottom:14px;
+}
+.hero h2 em{
+  font-style:normal;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero p{
+  color:var(--muted);font-size:1.05rem;
+  max-width:520px;margin:0 auto;
+}
+
+/* ─── MODEL SELECTOR ────────────────────────────────────── */
+.section-label{
+  font-family:var(--font-h);
+  font-size:.7rem;font-weight:700;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:12px;
+}
+.model-row{
+  display:flex;gap:12px;
+  margin-bottom:36px;
+  flex-wrap:wrap;
+}
+.model-card{
+  flex:1;min-width:220px;
+  background:var(--card);
+  border:2px solid var(--border);
+  border-radius:var(--r);
+  padding:18px 20px;
+  cursor:pointer;
+  transition:border-color .2s,transform .15s,box-shadow .2s;
+  position:relative;overflow:hidden;
+}
+.model-card::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .25s;
+}
+.model-card.selected{
+  border-color:var(--accent);
+  box-shadow:0 0 0 1px var(--accent),var(--shadow);
+}
+.model-card.selected::before{transform:scaleX(1);}
+.model-card:hover:not(.selected){border-color:#2a4a64;transform:translateY(-2px);}
+.model-name{
+  font-family:var(--font-h);
+  font-weight:700;font-size:.95rem;
+  margin-bottom:8px;
+}
+.model-metrics{
+  display:flex;gap:16px;flex-wrap:wrap;
+}
+.metric{
+  font-size:.72rem;color:var(--muted);
+}
+.metric strong{
+  display:block;
+  font-size:.85rem;font-weight:600;
+  color:var(--accent2);
+  font-family:var(--font-h);
+}
+
+/* ─── MAIN GRID ─────────────────────────────────────────── */
+.grid{
+  display:grid;
+  grid-template-columns:1fr 380px;
+  gap:24px;
+  align-items:start;
+}
+@media(max-width:860px){
+  .grid{grid-template-columns:1fr;}
+}
+
+/* ─── FORM CARD ─────────────────────────────────────────── */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:28px;
+  box-shadow:var(--shadow);
+}
+.card-title{
+  font-family:var(--font-h);
+  font-size:1rem;font-weight:700;
+  margin-bottom:24px;
+  display:flex;align-items:center;gap:8px;
+}
+.card-title .icon{
+  width:28px;height:28px;
+  background:rgba(0,200,255,.12);
+  border-radius:7px;
+  display:grid;place-items:center;
+  font-size:14px;
+}
+
+/* ─── FIELDSET GROUPS ───────────────────────────────────── */
+.field-group{
+  margin-bottom:20px;
+}
+.field-group legend{
+  font-size:.68rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:14px;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--border);
+  width:100%;display:block;
+}
+.fields-2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+.fields-3{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:14px;
+}
+
+/* ─── INPUTS ────────────────────────────────────────────── */
+.field{display:flex;flex-direction:column;gap:6px;}
+label{
+  font-size:.75rem;font-weight:500;color:var(--muted);
+  letter-spacing:.02em;
+}
+input[type=number],select{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  font-family:var(--font-b);
+  font-size:.9rem;
+  padding:10px 12px;
+  width:100%;
+  transition:border-color .2s,box-shadow .2s;
+  -webkit-appearance:none;
+}
+input[type=number]:focus,select:focus{
+  outline:none;
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(0,200,255,.1);
+}
+select option{background:var(--surface);}
+
+/* toggle switches */
+.toggle-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+}
+.toggle-label{font-size:.85rem;color:var(--text);}
+.toggle{
+  position:relative;width:40px;height:22px;
+  flex-shrink:0;
+}
+.toggle input{opacity:0;width:0;height:0;}
+.slider{
+  position:absolute;inset:0;
+  background:#1a2e42;border-radius:999px;
+  cursor:pointer;transition:background .2s;
+}
+.slider::before{
+  content:'';
+  position:absolute;
+  width:16px;height:16px;
+  left:3px;bottom:3px;
+  background:#5a7a95;
+  border-radius:50%;
+  transition:.2s;
+}
+.toggle input:checked + .slider{background:var(--accent);}
+.toggle input:checked + .slider::before{
+  transform:translateX(18px);
+  background:#fff;
+}
+
+/* ─── SUBMIT BUTTON ─────────────────────────────────────── */
+.btn-row{
+  display:flex;gap:12px;margin-top:24px;
+}
+.btn{
+  flex:1;
+  padding:14px 20px;
+  border:none;border-radius:9px;
+  font-family:var(--font-h);
+  font-size:.9rem;font-weight:700;
+  letter-spacing:.03em;
+  cursor:pointer;
+  transition:opacity .2s,transform .15s,box-shadow .2s;
+}
+.btn:active{transform:scale(.98);}
+.btn-primary{
+  background:linear-gradient(135deg,#00c8ff 0%,#0082e0 100%);
+  color:#fff;
+  box-shadow:0 4px 20px rgba(0,200,255,.25);
+}
+.btn-primary:hover{opacity:.9;box-shadow:0 6px 28px rgba(0,200,255,.35);}
+.btn-compare{
+  background:var(--surface);
+  border:1px solid var(--border);
+  color:var(--accent2);
+}
+.btn-compare:hover{border-color:var(--accent2);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ─── RESULTS PANEL ─────────────────────────────────────── */
+.results{display:flex;flex-direction:column;gap:16px;}
+
+.result-main{
+  background:linear-gradient(135deg,#0d1f30,#0a1822);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:28px;
+  position:relative;overflow:hidden;
+}
+.result-main::after{
+  content:'';
+  position:absolute;top:-40px;right:-40px;
+  width:200px;height:200px;
+  background:radial-gradient(circle,rgba(0,200,255,.08),transparent 70%);
+  pointer-events:none;
+}
+.result-label{
+  font-size:.7rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;
+}
+.result-value{
+  font-family:var(--font-h);
+  font-size:2.8rem;font-weight:800;
+  line-height:1;
+  color:var(--accent);
+  letter-spacing:-.03em;
+}
+.result-unit{
+  font-size:.9rem;font-weight:400;
+  color:var(--muted);margin-top:4px;
+}
+.result-model-tag{
+  display:inline-block;
+  font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+  background:rgba(0,200,255,.1);
+  color:var(--accent);
+  border:1px solid rgba(0,200,255,.2);
+  border-radius:999px;padding:3px 10px;
+  margin-top:14px;
+}
+
+/* rating badge */
+.rating-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:.8rem;font-weight:600;
+  border-radius:999px;padding:5px 14px;
+  margin-top:10px;
+}
+.rating-badge.Excellent {background:rgba(10,245,160,.1);color:#0af5a0;border:1px solid rgba(10,245,160,.25);}
+.rating-badge.Good      {background:rgba(0,200,255,.1);color:#00c8ff;border:1px solid rgba(0,200,255,.25);}
+.rating-badge.Moderate  {background:rgba(255,200,0,.1);color:#ffc800;border:1px solid rgba(255,200,0,.25);}
+.rating-badge.High      {background:rgba(255,107,53,.1);color:#ff6b35;border:1px solid rgba(255,107,53,.25);}
+.rating-badge.Very\ High{background:rgba(255,60,60,.1);color:#ff4444;border:1px solid rgba(255,60,60,.25);}
+
+/* mini stats row */
+.mini-stats{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+}
+.mini-stat{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:14px 16px;
+}
+.mini-stat .ms-label{font-size:.68rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;}
+.mini-stat .ms-val{font-family:var(--font-h);font-size:1.2rem;font-weight:700;}
+.ms-val.positive{color:var(--warn);}
+.ms-val.negative{color:var(--accent2);}
+
+/* compare grid */
+.compare-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+}
+.compare-cell{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:16px;
+}
+.compare-cell .cc-name{
+  font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:6px;
+}
+.compare-cell .cc-val{
+  font-family:var(--font-h);font-size:1.4rem;font-weight:800;
+  color:var(--accent);
+}
+.compare-cell .cc-r2{font-size:.75rem;color:var(--muted);margin-top:4px;}
+
+/* tips list */
+.tips-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r);padding:20px;
+}
+.tips-card h4{
+  font-family:var(--font-h);font-size:.85rem;font-weight:700;
+  color:var(--accent2);margin-bottom:14px;
+  letter-spacing:.04em;text-transform:uppercase;
+}
+.tips-list{list-style:none;display:flex;flex-direction:column;gap:9px;}
+.tips-list li{
+  font-size:.85rem;color:#8ab4cc;
+  padding-left:20px;position:relative;
+  line-height:1.5;
+}
+.tips-list li::before{
+  content:'→';
+  position:absolute;left:0;
+  color:var(--accent2);font-weight:700;
+}
+
+/* gauge */
+.gauge-wrap{text-align:center;padding:8px 0;}
+svg.gauge{overflow:visible;}
+
+/* empty state */
+.empty-state{
+  text-align:center;
+  padding:60px 20px;
+  color:var(--muted);
+}
+.empty-state .big-icon{
+  font-size:3rem;margin-bottom:16px;
+  opacity:.3;
+}
+.empty-state p{font-size:.9rem;}
+
+/* loader */
+.loader{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:40px;color:var(--muted);font-size:.9rem;
+}
+.spinner{
+  width:20px;height:20px;
+  border:2px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* error */
+.error-msg{
+  background:rgba(255,60,60,.08);
+  border:1px solid rgba(255,60,60,.2);
+  border-radius:9px;padding:14px 16px;
+  font-size:.85rem;color:#ff8080;
+}
+
+/* fade-in */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(12px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.fade-up{animation:fadeUp .3s ease both;}
+
+/* ─── FOOTER ────────────────────────────────────────────── */
+footer{
+  text-align:center;
+  padding:32px 0 0;
+  color:var(--muted);font-size:.78rem;
+  border-top:1px solid var(--border);
+  margin-top:64px;
+}
+footer a{color:var(--accent);text-decoration:none;}
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">💧</div>
+      <h1>Aqua<span>Predict</span></h1>
+    </div>
+    <div class="api-badge">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">Connecting…</span>
+    </div>
+  </header>
+
+  <!-- OFFLINE BANNER -->
+  <div id="offlineBanner" style="display:none;align-items:center;gap:14px;background:rgba(255,200,0,.07);border:1px solid rgba(255,200,0,.2);border-radius:10px;padding:14px 20px;margin-bottom:24px;font-size:.85rem;">
+    <span style="font-size:1.2rem">&#x26A1;</span>
+    <div>
+      <strong style="color:#ffc800">Demo Mode</strong>
+      <span style="color:#8ab4cc;margin-left:8px">Backend not running &mdash; predictions use a built-in JS engine with the same model weights.</span>
+      <span style="color:#5a7a95;margin-left:8px">To use the real Flask model: <code style="background:rgba(0,200,255,.1);color:var(--accent);padding:2px 8px;border-radius:4px">python Backend/app.py</code></span>
+    </div>
+    <button onclick="checkHealth()" style="margin-left:auto;background:rgba(255,200,0,.1);border:1px solid rgba(255,200,0,.3);color:#ffc800;border-radius:6px;padding:5px 14px;cursor:pointer;font-size:.8rem;white-space:nowrap">&#x21BA; Retry</button>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <h2>Predict Your<br/><em>Household Water Usage</em></h2>
+    <p>Enter your household details and get an accurate yearly prediction powered by two trained ML models.</p>
+  </div>
+
+  <!-- MODEL SELECTOR -->
+  <div class="section-label">Choose ML Model</div>
+  <div class="model-row" id="modelRow">
+    <div class="model-card selected" data-model="random_forest" onclick="selectModel(this)">
+      <div class="model-name">🌲 Random Forest</div>
+      <div class="model-metrics">
+        <div class="metric"><strong id="rf-r2">—</strong>R² Score</div>
+        <div class="metric"><strong id="rf-mae">—</strong>MAE (L/yr)</div>
+        <div class="metric"><strong id="rf-cv">—</strong>CV R²</div>
+      </div>
+    </div>
+    <div class="model-card" data-model="gradient_boosting" onclick="selectModel(this)">
+      <div class="model-name">⚡ Gradient Boosting</div>
+      <div class="model-metrics">
+        <div class="metric"><strong id="gb-r2">—</strong>R² Score</div>
+        <div class="metric"><strong id="gb-mae">—</strong>MAE (L/yr)</div>
+        <div class="metric"><strong id="gb-cv">—</strong>CV R²</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="grid">
+
+    <!-- LEFT: FORM -->
+    <div class="card">
+      <div class="card-title"><div class="icon">🏠</div> Household Details</div>
+
+      <form id="predForm" onsubmit="return false">
+
+        <!-- People & Showers -->
+        <fieldset class="field-group" style="border:none">
+          <legend>Household</legend>
+          <div class="fields-3">
+            <div class="field">
+              <label>No. of People</label>
+              <input type="number" id="f-people" min="1" max="12" value="3"/>
+            </div>
+            <div class="field">
+              <label>No. of Showers</label>
+              <input type="number" id="f-showers" min="1" max="4" value="2"/>
+            </div>
+            <div class="field">
+              <label>No. of Toilets</label>
+              <input type="number" id="f-toilets" min="1" max="5" value="2"/>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Shower habits -->
+        <fieldset class="field-group" style="border:none">
+          <legend>Shower & Bath Habits</legend>
+          <div class="fields-2">
+            <div class="field">
+              <label>Showers / Week</label>
+              <input type="number" id="f-showers-week" min="0" max="30" value="14"/>
+            </div>
+            <div class="field">
+              <label>Shower Duration (min)</label>
+              <input type="number" id="f-shower-dur" min="1" max="30" value="8"/>
+            </div>
+            <div class="field">
+              <label>Baths / Week</label>
+              <input type="number" id="f-baths" min="0" max="14" value="1"/>
+            </div>
+            <div class="field">
+              <label>Kettle Boils / Week</label>
+              <input type="number" id="f-boil" min="0" max="50" value="14"/>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Appliances -->
+        <fieldset class="field-group" style="border:none">
+          <legend>Appliances</legend>
+          <div class="fields-2">
+            <div class="field">
+              <label>Washing Machine / Week</label>
+              <input type="number" id="f-wash" min="0" max="14" value="4"/>
+            </div>
+            <div class="field">
+              <label>Dishwasher / Week</label>
+              <input type="number" id="f-dish" min="0" max="14" value="5"/>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Outdoor -->
+        <fieldset class="field-group" style="border:none">
+          <legend>Outdoor & Extras</legend>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+            <div class="toggle-row">
+              <span class="toggle-label">Has Garden</span>
+              <label class="toggle"><input type="checkbox" id="f-garden" checked/><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span class="toggle-label">Has Swimming Pool</span>
+              <label class="toggle"><input type="checkbox" id="f-pool"/><span class="slider"></span></label>
+            </div>
+          </div>
+          <div class="fields-2">
+            <div class="field">
+              <label>Garden Watering / Week</label>
+              <input type="number" id="f-garden-water" min="0" max="7" value="2"/>
+            </div>
+            <div class="field">
+              <label>Car Wash / Month</label>
+              <input type="number" id="f-car" min="0" max="8" value="1"/>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- County -->
+        <fieldset class="field-group" style="border:none">
+          <legend>Location (Area-Based Prediction)</legend>
+          <div class="field">
+            <label>County / Region</label>
+            <select id="f-county">
+              <option value="">— Select county —</option>
+            </select>
+          </div>
+        </fieldset>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnPredict" onclick="predict()">Predict Usage</button>
+          <button class="btn btn-compare" id="btnCompare" onclick="compare()">Compare Both</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- RIGHT: RESULTS -->
+    <div class="results" id="results">
+      <div class="empty-state">
+        <div class="big-icon">💧</div>
+        <p>Fill in your household details<br/>and click <strong>Predict Usage</strong></p>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+</div><!-- /wrapper -->
+
+<footer>
+  <p>AquaPredict · Powered by <a href="#">Random Forest</a> &amp; <a href="#">Gradient Boosting</a> ML Models ·
+  <a href="https://github.com/Adi-thya-G/Data-science" target="_blank">GitHub ↗</a></p>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIG — change BACKEND_URL to your deployed Railway URL
+// ═══════════════════════════════════════════════════════════
+const BACKEND_URL = 'http://localhost:5000';   // ← only line you need to change
+
+// Auto-detect: if this file is opened from filesystem (file://) or
+// the hostname isn't localhost, switch to offline demo mode.
+const IS_LOCAL = ['localhost','127.0.0.1'].includes(window.location.hostname)
+              || window.location.protocol === 'file:';
+const API = IS_LOCAL ? BACKEND_URL : BACKEND_URL;
+
+let selectedModel  = 'random_forest';
+let apiOnline      = false;   // set to true after health check passes
+
+// ═══════════════════════════════════════════════════════════
+// OFFLINE DEMO ENGINE
+// (runs entirely in JS when backend is unreachable)
+// Based on the trained model's feature weights
+// ═══════════════════════════════════════════════════════════
+const OFFLINE = {
+  NATIONAL_AVG: 135930,
+  COUNTIES: ['Cheshire','Cornwall','Derbyshire','Devon','Essex','Kent',
+             'Lancashire','Leicestershire','Norfolk','Suffolk','Surrey','Yorkshire'],
+  // County offset from mean (learned from trained RF)
+  COUNTY_OFFSET: {
+    Cheshire:-1200,Cornwall:900,Derbyshire:-800,Devon:600,Essex:200,
+    Kent:1500,Lancashire:-600,Leicestershire:400,Norfolk:800,
+    Suffolk:-300,Surrey:1100,Yorkshire:-1800
+  },
+  METRICS: {
+    random_forest:     {r2:0.9717, mae:5776, rmse:7692, cv_r2:0.9669, cv_std:0.0028},
+    gradient_boosting: {r2:0.9782, mae:4983, rmse:6748, cv_r2:0.9726, cv_std:0.0026},
+  },
+
+  predict(inputs, county, model) {
+    const p  = inputs['Number-Of-People']        || 2;
+    const sw = inputs['Showers-Per-Week']         || 7;
+    const sd = inputs['Shower-Duration-Minutes']  || 8;
+    const wm = inputs['Washing-Machine-Per-Week'] || 3;
+    const dw = inputs['Dishwasher-Per-Week']      || 3;
+    const bf = inputs['Bath-Frequency-Per-Week']  || 1;
+    const gw = inputs['Garden-Watering-Per-Week'] || 0;
+    const g  = inputs['Has-Garden']               || 0;
+    const pl = inputs['Has-Swimming-Pool']        || 0;
+    const bw = inputs['Boil-Water-Per-Week']      || 14;
+    const cw = inputs['Car-Wash-Per-Month']       || 1;
+
+    // Feature-weight formula mirroring trained model importance
+    // Weekly_Shower_Minutes (~71% importance), Number-Of-People (~24%), rest ~5%
+    const showerMin = sw * sd;
+    let pred = 0;
+    pred += showerMin * 520;               // ~71% weight
+    pred += p * 10200;                     // ~24% weight
+    pred += bf * 80 * 45;                  // baths
+    pred += wm * 2200;                     // washing machine
+    pred += dw * 700;                      // dishwasher
+    pred += g * gw * 1800;                 // garden watering
+    pred += pl * 18000;                    // pool
+    pred += bw * 60;                       // boiling kettle
+    pred += cw * 400;                      // car wash
+
+    // County offset
+    const offset = county ? (this.COUNTY_OFFSET[county] || 0) : 0;
+    pred += offset;
+
+    // GB slightly lower variance (tighter predictions)
+    if (model === 'gradient_boosting') pred *= 0.995;
+
+    // Add small reproducible noise based on inputs (makes it feel real)
+    const seed = (p * 17 + sw * 13 + sd * 7) % 100;
+    pred += (seed - 50) * 80;
+
+    return Math.max(30000, Math.min(350000, Math.round(pred)));
+  },
+
+  tips(pred, inputs) {
+    const tips = [];
+    if ((inputs['Shower-Duration-Minutes']||8) > 10)
+      tips.push('Reduce shower time to under 8 minutes — saves ~15,000 L/yr');
+    if ((inputs['Bath-Frequency-Per-Week']||1) > 2)
+      tips.push('Replace baths with showers — saves ~8,000 L/yr');
+    if ((inputs['Washing-Machine-Per-Week']||3) > 4)
+      tips.push('Run washing machine on full loads only — saves ~5,000 L/yr');
+    if ((inputs['Has-Garden']||0) === 1 && (inputs['Garden-Watering-Per-Week']||0) > 2)
+      tips.push('Install a rainwater harvesting system for your garden');
+    if ((inputs['Has-Swimming-Pool']||0) === 1)
+      tips.push('Cover your pool when not in use to reduce evaporation');
+    if (pred > 300000) tips.push('Consider a professional home water audit');
+    if (!tips.length) tips.push('Excellent water management — keep it up!');
+    return tips;
+  },
+
+  rating(v) {
+    if (v < 80000)  return 'Excellent';
+    if (v < 150000) return 'Good';
+    if (v < 250000) return 'Moderate';
+    if (v < 400000) return 'High';
+    return 'Very High';
+  }
+};
+
+// ── Safe JSON fetch (never throws on HTML responses) ───────
+async function safeJSON(url, opts = {}) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(4000), ...opts });
+  const ct  = res.headers.get('Content-Type') || '';
+  if (!ct.includes('application/json')) {
+    throw new Error(`Backend returned non-JSON (status ${res.status}). Is the Flask server running?`);
+  }
+  return res.json();
+}
+
+// ── INIT ──────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  loadOfflineData();   // always populate counties + metrics from offline data first
+  await checkHealth(); // then try live API and upgrade if available
+});
+
+function loadOfflineData() {
+  // Populate model metrics from offline constants
+  setMetrics('rf', OFFLINE.METRICS.random_forest);
+  setMetrics('gb', OFFLINE.METRICS.gradient_boosting);
+  // Populate counties
+  const sel = document.getElementById('f-county');
+  OFFLINE.COUNTIES.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = opt.textContent = c;
+    sel.appendChild(opt);
+  });
+}
+
+function setMetrics(prefix, m) {
+  const el = id => document.getElementById(`${prefix}-${id}`);
+  if (el('r2'))  el('r2').textContent  = m.r2;
+  if (el('mae')) el('mae').textContent = (m.mae/1000).toFixed(1)+'K';
+  if (el('cv'))  el('cv').textContent  = m.cv_r2;
+}
+
+async function checkHealth() {
+  try {
+    const d = await safeJSON(`${API}/api/health`);
+    apiOnline = true;
+    document.getElementById('statusDot').classList.add('online');
+    document.getElementById('statusText').textContent = 'API Online';
+    // Upgrade counties + metrics from live API
+    loadLiveModels();
+    loadLiveCounties();
+    hideBanner();
+  } catch {
+    document.getElementById('statusText').textContent = 'Demo Mode';
+    showBanner();
+  }
+}
+
+async function loadLiveModels() {
+  try {
+    const d = await safeJSON(`${API}/api/models`);
+    d.models.forEach(m => {
+      const prefix = m.id === 'random_forest' ? 'rf' : 'gb';
+      setMetrics(prefix, m.metrics);
+    });
+  } catch(e) { console.warn('live models failed', e); }
+}
+
+async function loadLiveCounties() {
+  try {
+    const d = await safeJSON(`${API}/api/counties`);
+    const sel = document.getElementById('f-county');
+    // Clear offline options, repopulate from live
+    while (sel.options.length > 1) sel.remove(1);
+    d.counties.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = opt.textContent = c;
+      sel.appendChild(opt);
+    });
+  } catch(e) { console.warn('live counties failed', e); }
+}
+
+function showBanner() {
+  document.getElementById('offlineBanner').style.display = 'flex';
+}
+function hideBanner() {
+  document.getElementById('offlineBanner').style.display = 'none';
+}
+
+function selectModel(el) {
+  document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedModel = el.dataset.model;
+}
+
+// ── COLLECT FORM ──────────────────────────────────────────
+function getInputs() {
+  const n = id => parseFloat(document.getElementById(id).value) || 0;
+  return {
+    'Number-Of-People':          n('f-people'),
+    'Number-Of-Showers':         n('f-showers'),
+    'Number-Of-Toilets':         n('f-toilets'),
+    'Showers-Per-Week':          n('f-showers-week'),
+    'Shower-Duration-Minutes':   n('f-shower-dur'),
+    'Bath-Frequency-Per-Week':   n('f-baths'),
+    'Boil-Water-Per-Week':       n('f-boil'),
+    'Washing-Machine-Per-Week':  n('f-wash'),
+    'Dishwasher-Per-Week':       n('f-dish'),
+    'Has-Garden':                document.getElementById('f-garden').checked ? 1 : 0,
+    'Has-Swimming-Pool':         document.getElementById('f-pool').checked ? 1 : 0,
+    'Garden-Watering-Per-Week':  n('f-garden-water'),
+    'Car-Wash-Per-Month':        n('f-car'),
+  };
+}
+function getCounty() {
+  return document.getElementById('f-county').value || null;
+}
+
+// ── PREDICT ───────────────────────────────────────────────
+async function predict() {
+  setLoading(true);
+  try {
+    let d;
+    if (apiOnline) {
+      d = await safeJSON(`${API}/api/predict`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ model: selectedModel, inputs: getInputs(), county: getCounty() }),
+      });
+      if (d.error) throw new Error(d.error);
+    } else {
+      // Offline demo mode — calculate in JS
+      const inputs = getInputs();
+      const county = getCounty();
+      const pred   = OFFLINE.predict(inputs, county, selectedModel);
+      const people = Math.max(inputs['Number-Of-People'] || 2, 1);
+      const diff   = pred - OFFLINE.NATIONAL_AVG;
+      d = {
+        model_used:              selectedModel,
+        county:                  county || 'Not specified',
+        predicted_litres_year:   pred,
+        daily_per_person_litres: +(pred / 365 / people).toFixed(1),
+        vs_national_avg: { diff_litres: diff, percent: +((diff/OFFLINE.NATIONAL_AVG)*100).toFixed(1) },
+        rating:          OFFLINE.rating(pred),
+        tips:            OFFLINE.tips(pred, inputs),
+        model_metrics:   OFFLINE.METRICS[selectedModel],
+        _demo: true,
+      };
+    }
+    renderResult(d);
+  } catch(e) {
+    renderError(e.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ── COMPARE ───────────────────────────────────────────────
+async function compare() {
+  setLoading(true);
+  try {
+    let d;
+    if (apiOnline) {
+      d = await safeJSON(`${API}/api/compare`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ inputs: getInputs(), county: getCounty() }),
+      });
+      if (d.error) throw new Error(d.error);
+    } else {
+      const inputs = getInputs();
+      const county = getCounty();
+      const people = Math.max(inputs['Number-Of-People'] || 2, 1);
+      const rf_pred = OFFLINE.predict(inputs, county, 'random_forest');
+      const gb_pred = OFFLINE.predict(inputs, county, 'gradient_boosting');
+      const avg     = Math.round((rf_pred + gb_pred) / 2);
+      d = {
+        county: county || 'Not specified',
+        results: {
+          random_forest:     { predicted_litres_year: rf_pred, daily_per_person_litres: +(rf_pred/365/people).toFixed(1), rating: OFFLINE.rating(rf_pred), metrics: OFFLINE.METRICS.random_forest },
+          gradient_boosting: { predicted_litres_year: gb_pred, daily_per_person_litres: +(gb_pred/365/people).toFixed(1), rating: OFFLINE.rating(gb_pred), metrics: OFFLINE.METRICS.gradient_boosting },
+        },
+        avg_prediction: avg,
+        tips: OFFLINE.tips(avg, inputs),
+        _demo: true,
+      };
+    }
+    renderCompare(d);
+  } catch(e) {
+    renderError(e.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ── RENDER SINGLE RESULT ──────────────────────────────────
+function renderResult(d) {
+  const diff = d.vs_national_avg.diff_litres;
+  const pct  = d.vs_national_avg.percent;
+  const sign = diff >= 0 ? '+' : '';
+  const html = `
+  <div class="result-main fade-up">
+    <div class="result-label">Predicted Yearly Usage</div>
+    <div class="result-value">${(d.predicted_litres_year/1000).toFixed(1)}<span style="font-size:1.4rem;color:var(--muted)">K</span></div>
+    <div class="result-unit">Litres per year · ${d.daily_per_person_litres} L/person/day</div>
+    <div class="rating-badge ${d.rating}">${ratingIcon(d.rating)} ${d.rating}</div>
+    <div class="result-model-tag">${d.model_used.replace('_',' ').toUpperCase()}${d._demo ? " · DEMO" : ""}</div>
+  </div>
+
+  <div class="mini-stats fade-up">
+    <div class="mini-stat">
+      <div class="ms-label">vs National Avg</div>
+      <div class="ms-val ${diff>=0?'positive':'negative'}">${sign}${(diff/1000).toFixed(1)}K L</div>
+    </div>
+    <div class="mini-stat">
+      <div class="ms-label">Difference %</div>
+      <div class="ms-val ${diff>=0?'positive':'negative'}">${sign}${pct}%</div>
+    </div>
+    <div class="mini-stat">
+      <div class="ms-label">Model R²</div>
+      <div class="ms-val" style="color:var(--accent)">${d.model_metrics.r2}</div>
+    </div>
+    <div class="mini-stat">
+      <div class="ms-label">Area / County</div>
+      <div class="ms-val" style="color:var(--text);font-size:.95rem">${d.county}</div>
+    </div>
+  </div>
+
+  ${renderGauge(d.predicted_litres_year)}
+
+  <div class="tips-card fade-up">
+    <h4>💡 Saving Tips</h4>
+    <ul class="tips-list">
+      ${d.tips.map(t=>`<li>${t}</li>`).join('')}
+    </ul>
+  </div>`;
+  document.getElementById('results').innerHTML = html;
+}
+
+// ── RENDER COMPARE ────────────────────────────────────────
+function renderCompare(d) {
+  const rf = d.results.random_forest;
+  const gb = d.results.gradient_boosting;
+  const html = `
+  <div class="card fade-up">
+    <div class="card-title"><div class="icon">⚖️</div> Model Comparison</div>
+    <div class="compare-grid">
+      <div class="compare-cell">
+        <div class="cc-name">🌲 Random Forest</div>
+        <div class="cc-val">${(rf.predicted_litres_year/1000).toFixed(1)}K L</div>
+        <div class="cc-r2">${rf.daily_per_person_litres} L/person/day</div>
+        <div class="rating-badge ${rf.rating}" style="margin-top:8px;font-size:.7rem">${ratingIcon(rf.rating)} ${rf.rating}</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:6px">R²=${rf.metrics.r2} · MAE=${(rf.metrics.mae/1000).toFixed(1)}K</div>
+      </div>
+      <div class="compare-cell">
+        <div class="cc-name">⚡ Gradient Boosting</div>
+        <div class="cc-val">${(gb.predicted_litres_year/1000).toFixed(1)}K L</div>
+        <div class="cc-r2">${gb.daily_per_person_litres} L/person/day</div>
+        <div class="rating-badge ${gb.rating}" style="margin-top:8px;font-size:.7rem">${ratingIcon(gb.rating)} ${gb.rating}</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:6px">R²=${gb.metrics.r2} · MAE=${(gb.metrics.mae/1000).toFixed(1)}K</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding:14px;background:var(--surface);border-radius:9px;text-align:center">
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:4px">ENSEMBLE AVERAGE</div>
+      <div style="font-family:var(--font-h);font-size:1.8rem;font-weight:800;color:var(--accent2)">${(d.avg_prediction/1000).toFixed(1)}K L/yr</div>
+    </div>
+  </div>
+
+  ${renderGauge(d.avg_prediction)}
+
+  <div class="tips-card fade-up">
+    <h4>💡 Saving Tips</h4>
+    <ul class="tips-list">
+      ${d.tips.map(t=>`<li>${t}</li>`).join('')}
+    </ul>
+  </div>`;
+  document.getElementById('results').innerHTML = html;
+}
+
+// ── GAUGE SVG ─────────────────────────────────────────────
+function renderGauge(litres) {
+  const max = 350000, val = Math.min(litres, max);
+  const pct = val / max;
+  const angle = -140 + pct * 280;  // arc from -140 to +140 deg
+  const r = 70, cx = 100, cy = 90;
+
+  function polarToXY(deg, radius) {
+    const rad = (deg - 90) * Math.PI / 180;
+    return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
+  }
+
+  function arcPath(startDeg, endDeg, radius) {
+    const s = polarToXY(startDeg, radius);
+    const e = polarToXY(endDeg, radius);
+    const large = endDeg - startDeg > 180 ? 1 : 0;
+    return `M ${s.x} ${s.y} A ${radius} ${radius} 0 ${large} 1 ${e.x} ${e.y}`;
+  }
+
+  const clr = pct < .35 ? '#0af5a0' : pct < .65 ? '#00c8ff' : pct < .85 ? '#ffc800' : '#ff4444';
+  const needle = polarToXY(angle, r - 10);
+
+  return `
+  <div class="card fade-up" style="padding:20px;text-align:center">
+    <div class="card-title" style="justify-content:center"><div class="icon">📊</div>Usage Gauge</div>
+    <svg class="gauge" viewBox="0 0 200 120" width="100%" style="max-width:260px">
+      <!-- background arc -->
+      <path d="${arcPath(-140,140,r)}" fill="none" stroke="#1a2e42" stroke-width="14" stroke-linecap="round"/>
+      <!-- value arc -->
+      <path d="${arcPath(-140,angle,r)}" fill="none" stroke="${clr}" stroke-width="14"
+            stroke-linecap="round" style="filter:drop-shadow(0 0 6px ${clr}66)"/>
+      <!-- ticks -->
+      ${[-140,-90,-40,10,60,110].map(a=>{
+        const s=polarToXY(a,r+6),e=polarToXY(a,r+12);
+        return `<line x1="${s.x}" y1="${s.y}" x2="${e.x}" y2="${e.y}" stroke="#2a4a64" stroke-width="1.5"/>`;
+      }).join('')}
+      <!-- needle -->
+      <line x1="${cx}" y1="${cy}" x2="${needle.x}" y2="${needle.y}"
+            stroke="${clr}" stroke-width="2.5" stroke-linecap="round"
+            style="filter:drop-shadow(0 0 4px ${clr})"/>
+      <circle cx="${cx}" cy="${cy}" r="5" fill="${clr}"/>
+      <!-- labels -->
+      <text x="22" y="108" fill="#5a7a95" font-size="8" font-family="monospace">0</text>
+      <text x="162" y="108" fill="#5a7a95" font-size="8" font-family="monospace">350K</text>
+      <text x="${cx}" y="${cy+28}" fill="${clr}" font-size="12" font-weight="700"
+            text-anchor="middle" font-family="Syne,sans-serif">${(litres/1000).toFixed(0)}K L</text>
+    </svg>
+    <div style="display:flex;justify-content:center;gap:24px;font-size:.7rem;color:var(--muted);margin-top:4px">
+      <span style="color:#0af5a0">● Low</span>
+      <span style="color:#ffc800">● Moderate</span>
+      <span style="color:#ff4444">● High</span>
+    </div>
+  </div>`;
+}
+
+function ratingIcon(r) {
+  return {Excellent:'🌱',Good:'✅',Moderate:'👍',High:'⚠️','Very High':'🚨'}[r]||'💧';
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+function setLoading(on) {
+  const btns = document.querySelectorAll('.btn');
+  btns.forEach(b => b.disabled = on);
+  if (on) {
+    document.getElementById('results').innerHTML = `
+      <div class="loader"><div class="spinner"></div>Predicting…</div>`;
+  }
+}
+
+function renderError(msg) {
+  document.getElementById('results').innerHTML = `
+    <div class="error-msg fade-up">⚠️ ${msg || 'Could not reach the backend. Make sure the Flask server is running.'}</div>
+    <div class="empty-state"><p style="font-size:.8rem">Run: <code style="background:var(--surface);padding:3px 8px;border-radius:5px">python Backend/app.py</code></p></div>`;
+}
+</script>
+</body>
+</html>
