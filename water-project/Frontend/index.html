@@ -602,20 +602,14 @@ footer a{color:var(--accent);text-decoration:none;}
         <fieldset class="field-group" style="border:none">
           <legend>Outdoor & Extras</legend>
           <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
-            <div class="toggle-row">
-              <span class="toggle-label">Has Garden</span>
-              <label class="toggle"><input type="checkbox" id="f-garden" checked/><span class="slider"></span></label>
-            </div>
+           
             <div class="toggle-row">
               <span class="toggle-label">Has Swimming Pool</span>
               <label class="toggle"><input type="checkbox" id="f-pool"/><span class="slider"></span></label>
             </div>
           </div>
           <div class="fields-2">
-            <div class="field">
-              <label>Garden Watering / Week</label>
-              <input type="number" id="f-garden-water" min="0" max="7" value="2"/>
-            </div>
+           
             <div class="field">
               <label>Car Wash / Month</label>
               <input type="number" id="f-car" min="0" max="8" value="1"/>
@@ -861,9 +855,9 @@ function getInputs() {
     'Boil-Water-Per-Week':       n('f-boil'),
     'Washing-Machine-Per-Week':  n('f-wash'),
     'Dishwasher-Per-Week':       n('f-dish'),
-    'Has-Garden':                document.getElementById('f-garden').checked ? 1 : 0,
+    'Has-Garden':                 0,
     'Has-Swimming-Pool':         document.getElementById('f-pool').checked ? 1 : 0,
-    'Garden-Watering-Per-Week':  n('f-garden-water'),
+    'Garden-Watering-Per-Week':  0,
     'Car-Wash-Per-Month':        n('f-car'),
   };
 }
